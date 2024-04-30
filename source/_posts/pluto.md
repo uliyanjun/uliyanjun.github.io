@@ -1,9 +1,8 @@
 ---
-title: jdk
+title: pluto
 date: 2024-04-30 15:16:18
 categories: 
-- c2
+- pluto
 tags:
-- tt1
-- tt2
+- pluto
 ---
