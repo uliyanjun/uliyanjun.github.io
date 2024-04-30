@@ -21,12 +21,12 @@ pretty_urls:
   trailing_html: true # Set to false to remove trailing '.html' from permalinks
 
 # Directory
-source_dir: source
-public_dir: public
-tag_dir: tags
-archive_dir: archives
-category_dir: categories
-code_dir: downloads/code
+source_dir: source # 资源文件夹，这个文件夹用来存放内容。
+public_dir: public # 公共文件夹，这个文件夹用于存放生成的站点文件。
+tag_dir: tags # 标签文件夹
+archive_dir: archives # 归档文件夹
+category_dir: categories # 分类文件夹
+code_dir: downloads/code # Include code 文件夹，source_dir 下的子目录
 i18n_dir: :lang
 skip_render:
 
@@ -102,3 +102,12 @@ theme: next
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
   type: ''
+
+
+# Generate categories from directory-tree
+# Dependencies: https://github.com/xu-song/hexo-auto-category
+# depth: the depth of directory-tree you want to generate, should > 0
+auto_category:
+ enable: true
+ multiple: false
+ depth: 
