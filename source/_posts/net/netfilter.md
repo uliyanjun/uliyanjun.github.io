@@ -159,7 +159,7 @@ int ip_output(struct net *net, struct sock *sk, struct sk_buff *skb)
 
 ## 图示包流转过程
 
-![包流转](../../../_repo/pic/image-20241129173040396.png)
+![包流转](../../imgs/netfilter/image-20241129173040396.png)
 
 ## Netfilter 四表
 
