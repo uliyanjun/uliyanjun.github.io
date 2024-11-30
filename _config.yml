@@ -108,7 +108,12 @@ deploy:
 # Dependencies: https://github.com/xu-song/hexo-auto-category
 # depth: the depth of directory-tree you want to generate, should > 0
 auto_category:
- enable: true
- multiple: false
- depth: 
- 
+  enable: true
+  multiple: false
+  depth: 
+
+search:
+  path: search.xml
+  field: post
+  format: html
+  limit: 10000

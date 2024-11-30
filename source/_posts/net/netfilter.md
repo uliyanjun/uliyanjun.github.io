@@ -9,15 +9,15 @@ tags:
 - iptables
 ---
 
-## Netfilter 简介
+# Netfilter 简介
 
 `Netfilter` 是由 `Linux` 内核提供的一个框架，它允许以自定义处理程序的形式实现各种与网络相关的操作。`Netfilter` 提供了用于数据包过滤、网络地址转换（NAT）和端口转换的多种功能和操作，从而实现将数据包引导通过网络以及阻止数据包到达网络中敏感位置所需的功能。
 
 利用应用层软件，如 `iptables` 、`nftables` 、`ebtables` 和 `arptables` 等来控制 `Netfilter`。
 
-## Netfilter 五链
+# Netfilter 五链
 
-### HOOK 点
+## HOOK 点
 
 - `NF_INET_PRE_ROUTING`：数据包进入网络层之后，进入路由表之前
 - `NF_INET_LOCAL_IN`：通过路由表之后，且目的为本机
@@ -31,9 +31,9 @@ tags:
 - 转发：`NF_INET_PRE_ROUTING` => `NF_INET_FORWARD` => `NF_INET_POST_ROUTING`
 - 本地发出：`NF_INET_LOCAL_OUT` => `NF_INET_POST_ROUTING`
 
-### 代码定位（ip_v4为例）
+## 代码定位（ip_v4为例）
 
-#### `NF_INET_PRE_ROUTING`
+### `NF_INET_PRE_ROUTING`
 
 ```c
 /*
@@ -55,7 +55,7 @@ int ip_rcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt,
 }
 ```
 
-#### `NF_INET_LOCAL_IN`
+### `NF_INET_LOCAL_IN`
 
 ```c
 /* 
@@ -80,7 +80,7 @@ int ip_local_deliver(struct sk_buff *skb)
 }
 ```
 
-#### `NF_INET_FORWARD`
+### `NF_INET_FORWARD`
 
 ```c
 /*
@@ -107,7 +107,7 @@ int ip_forward(struct sk_buff *skb)
 }
 ```
 
-#### `NF_INET_LOCAL_OUT`
+### `NF_INET_LOCAL_OUT`
 
 ```c
 /*
@@ -137,7 +137,7 @@ int __ip_local_out(struct net *net, struct sock *sk, struct sk_buff *skb)
 }
 ```
 
-#### `NF_INET_POST_ROUTING`
+### `NF_INET_POST_ROUTING`
 
 ```c
 /*
@@ -157,39 +157,30 @@ int ip_output(struct net *net, struct sock *sk, struct sk_buff *skb)
 }
 ```
 
-## 图示包流转过程
+# 图示包流转过程
 
 ![包流转](../../imgs/netfilter/image-20241129173040396.png)
 
-## Netfilter 四表
+# Netfilter 四表
 
 - Filter 表：用于实现数据包过滤
-
   - 主要链：
     - INPUT、FORWARD、OUTPUT。
   - 作用：
     - 根据规则允许或阻止数据包。
-
   - 示例：
-
     ```bash
     # 阻止所有尝试连接到本机 TCP 22 端口（SSH 默认端口）的流量
     iptables -A INPUT -p tcp --dport 22 -j DROP 
     ```
 
 - Nat 表：用于网络地址转换（NAT），如修改源地址或目标地址
-
   - 主要链：
-
     - PREROUTING、OUTPUT、POSTROUTING。
-
   - 作用：
-
     - DNAT（目标地址转换）。
     - SNAT（源地址转换）。
-
   - 示例：
-
     ```bash
     # 实现源地址伪装（SNAT），将从本地发出的数据包的源 IP 替换为接口 eth0 的 IP 地址
     iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
@@ -198,40 +189,27 @@ int ip_output(struct net *net, struct sock *sk, struct sk_buff *skb)
 - Mangle 表：用于对数据包进行复杂的修改
 
   - 主要链：
-
     - PREROUTING、OUTPUT、INPUT、FORWARD、POSTROUTING。
-
   - 作用：
-
     - 修改 TOS（Type of Service）、TTL（Time to Live）等数据包头部字段。
-
   - 示例：
-
     ```bash
     # 将目标端口为 80（HTTP）的数据包的 TTL 设置为 16
     iptables -t mangle -A PREROUTING -p tcp --dport 80 -j TTL --ttl-set 16
     ```
 
 - Raw 表：用于设置数据包的连接跟踪状态。
-
   - 主要链：
-
     - PREROUTING、OUTPUT。
-
   - 作用：
-
     - 标记数据包以跳过连接跟踪（提高性能）。
-
   - 示例：
-
     ```bash
     # 禁止对目标端口为 22（SSH 服务）的所有 TCP 流量进行连接跟踪，以加速流量
     iptables -t raw -A PREROUTING -p tcp --dport 22 -j NOTRACK
     ```
 
-    
-
-## 参考资料
+# 参考资料
 
 - https://en.wikipedia.org/wiki/Netfilter#
 - https://yngty.github.io/2024/07/11/network/Netfilter-%E6%A1%86%E6%9E%B6%E6%B5%85%E6%9E%90/
