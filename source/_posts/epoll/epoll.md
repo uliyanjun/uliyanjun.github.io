@@ -465,3 +465,6 @@ static int ep_autoremove_wake_function(struct wait_queue_entry *wq_entry,
 9. ep_poll_callback 触发 eventpoll 上注册的 default_wake_function 函数
 10. default_wake_function 唤醒用户进程
 11. 用户进程则开始循环检测就绪队列，如果存在数据则交由用户进程处理，如果不存在则挂起当前进程，让出 CPU，等待下次被唤醒。
+# 参考资料
+- https://events19.linuxfoundation.org/wp-content/uploads/2018/07/dbueso-oss-japan19.pdf
+- https://cloud.tencent.com/developer/article/2212219
