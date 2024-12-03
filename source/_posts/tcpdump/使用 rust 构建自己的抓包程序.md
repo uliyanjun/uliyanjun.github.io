@@ -621,6 +621,7 @@ void dev_queue_xmit_nit(struct sk_buff *skb, struct net_device *dev)
 
 # 参考资料
 
+- https://docs.rs/pcap/latest/pcap/
 - https://googleprojectzero.blogspot.com/2017/05/exploiting-linux-kernel-via-packet.html
 - https://www.eet-china.com/mp/a78228.html
 - https://medium.com/@chnhaoran/tcpdump-deep-dive-how-tcpdump-works-in-the-kernel-b1976ea39f7e
