@@ -1,12 +1,12 @@
 ---
-title: Netfilter 分析与 iptables 使用
-date: 2024-04-30 15:16:18
-categories: 
-- net
+title: Netfilter 分析与 Iptables 使用
+categories:
+  - net
 tags:
-- net
-- Netfilter
-- iptables
+  - net
+  - Netfilter
+  - iptables
+date: 2024-04-30 15:16:18
 ---
 
 # Netfilter 简介
