@@ -74,7 +74,7 @@ int main() {
 
 # 流程解析
 
-![epoll](../../imgs/epoll/epoll-20241202185931697.svg)
+![epoll](../../imgs/epoll/epoll_20241204.svg)
 
 ##  流程一、构建 eventpoll，添加 socket，调用 epoll_wait 过程
 
@@ -201,7 +201,7 @@ static int ep_insert(struct eventpoll *ep, const struct epoll_event *event,
 }
 ```
 
-#### 设置回调函数 
+#### 设置 socket 回调函数 (ep_poll_callback)
 
 ```c
 /*
@@ -279,7 +279,7 @@ static int do_epoll_wait(int epfd, struct epoll_event __user *events,
 }
 ```
 
-#### 循环处理事件
+#### 循环处理事件（设置 epoll 等待队列的回调函数）
 
 ```c
 /**
@@ -374,6 +374,7 @@ static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
 		 * threads to wake up without being removed normally.
 		 */
 		init_wait(&wait);
+    // 设置 epoll 等待队列的回调函数为 ep_autoremove_wake_function
 		wait.func = ep_autoremove_wake_function;
 
 		write_lock_irq(&ep->lock);
@@ -427,31 +428,6 @@ static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
 }
 ```
 
-#### 设置 epoll 回调函数
-
-```c
-/*
- * autoremove_wake_function, but remove even on failure to wake up, because we
- * know that default_wake_function/ttwu will only fail if the thread is already
- * woken, and in that case the ep_poll loop will remove the entry anyways, not
- * try to reuse it.
- */
-static int ep_autoremove_wake_function(struct wait_queue_entry *wq_entry,
-				       unsigned int mode, int sync, void *key)
-{
-	int ret = default_wake_function(wq_entry, mode, sync, key);
-
-	/*
-	 * Pairs with list_empty_careful in ep_poll, and ensures future loop
-	 * iterations see the cause of this wakeup.
-	 */
-	list_del_init_careful(&wq_entry->entry);
-	return ret;
-}
-```
-
-
-
 ## 流程二、数据包到达时
 
 1. 数据包到达网卡
@@ -462,8 +438,8 @@ static int ep_autoremove_wake_function(struct wait_queue_entry *wq_entry,
 6. 数据包从 Ring Buffer 上取出来，保存为一个 skb
 7. 协议层接管 skb，并将 data 部分放到 socket 接收队列
 8. 触发 socket 上注册的 ep_poll_callback 函数
-9. ep_poll_callback 触发 eventpoll 上注册的 default_wake_function 函数
-10. default_wake_function 唤醒用户进程
+9. ep_poll_callback 触发 eventpoll 上注册的 ep_autoremove_wake_function 函数
+10. ep_autoremove_wake_function 唤醒用户进程
 11. 用户进程则开始循环检测就绪队列，如果存在数据则交由用户进程处理，如果不存在则挂起当前进程，让出 CPU，等待下次被唤醒。
 # 参考资料
 - https://events19.linuxfoundation.org/wp-content/uploads/2018/07/dbueso-oss-japan19.pdf
