@@ -56,7 +56,7 @@ int main() {
 | rbr       | struct rb_root     | 红黑树，用户存储注册的文件描述符和事件。（epoll_ctl调用后，socket 会添加到该树上） |
 | rdllist   | struct list_head   | 就绪队列，双向链表，存储已触发的事件供用户检索。             |
 | wq        | wait_queue_head_t  | 等待队列，用户挂起调用`epoll_wait`的用户进程。（为什么是队列而不是当前进程：1、多个线程可能同时对同一个 `epoll` 实例调用 `epoll_wait()`。2、如果通过 `fork()` 创建了子进程，父子进程可以共享同一个 `epoll` 实例，并同时调用 `epoll_wait()`。） |
-| poll_wait | wait_queue_head_t  | 等待队列，用于监听文件描述符状体变化。用来处理递归监听的情况。 |
+| poll_wait | wait_queue_head_t  | poll_wait 是 epoll 实例中另一个等待队列。当被监视的文件是一个 epoll 类型时，需要用这个等待队列来处理递归唤醒 |
 | ovflist   | struct epitem *    | 溢出列表，存储触发但无法立即处理的事件。                     |
 | lock      | spinlock_t         | 自旋锁，保护共享数据在多线程环境下的一致性。                 |
 | file      | struct file *      | 表示与`epoll`实例关联的文件对象。                            |
