@@ -177,6 +177,15 @@ void flushAppendOnlyFile(int force) {
         server.mstime - server.aof_last_fsync >= 1000 &&
         !(sync_in_progress = aofFsyncInProgress())) {
         goto try_fsync;
+
+    /* Check if we need to do fsync even the aof buffer is empty,
+     * the reason is described in the previous AOF_FSYNC_EVERYSEC block,
+     * and AOF_FSYNC_ALWAYS is also checked here to handle a case where
+     * aof_fsync is changed from everysec to always. */
+    } else if (server.aof_fsync == AOF_FSYNC_ALWAYS &&
+               server.aof_last_incr_fsync_offset != server.aof_last_incr_size)
+    {
+        goto try_fsync;
       
 try_fsync:
     if (redis_fsync(server.aof_fd) == -1) {
