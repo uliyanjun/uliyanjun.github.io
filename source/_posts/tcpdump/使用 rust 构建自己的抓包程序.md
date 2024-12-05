@@ -209,7 +209,7 @@ int __sock_create(struct net *net, int family, int type, int protocol,
 }
 ```
 
-通过 net_families 找到 pf, 调用 create 方法。
+通过 `net_families` 找到 pf, 调用 `create` 方法。
 
 ```c
 // socket.h
@@ -265,9 +265,9 @@ int __sock_create(struct net *net, int family, int type, int protocol,
 #define PF_MAX		AF_MAX
 ```
 
-应用层创建时选择的参数是 AF_PACKET
+应用层创建时选择的参数是 `AF_PACKET`
 
-AF_PACKET[address familie]  => PF_PACKET[Protocol familie]
+`AF_PACKET[address familie]`  => `PF_PACKET[Protocol familie]`
 
 ```c
 // net/packet/af_packet.c
@@ -278,7 +278,7 @@ static const struct net_proto_family packet_family_ops = {
 };
 ```
 
-上述定义的 create 方法为 packet_create。
+上述定义的 `create` 方法为 `packet_create`。
 
 ```c
 // net/packet/af_packet.c
@@ -340,11 +340,11 @@ static inline struct list_head *ptype_head(const struct packet_type *pt)
 }
 ```
 
-总结：应用层创建一个特殊的 socket，设置回调为函数为 packet_rcv，并注册到 ptype_all 上。
+总结：应用层创建一个特殊的 `socket`，设置回调为函数为 `packet_rcv`，并注册到 `ptype_all` 上。
 
 ## 分析收包过程
 
-cpu 软中断入口
+`cpu` 软中断入口
 
 ```c
 // net/core/dev.c
@@ -562,21 +562,9 @@ struct sk_buff *dev_hard_start_xmit(struct sk_buff *first, struct net_device *de
 
 	while (skb) {
 		struct sk_buff *next = skb->next;
-
 		skb_mark_not_on_list(skb);
 		rc = xmit_one(skb, dev, txq, next != NULL);
-		if (unlikely(!dev_xmit_complete(rc))) {
-			skb->next = next;
-			goto out;
-		}
-
-		skb = next;
-		if (netif_tx_queue_stopped(txq) && skb) {
-			rc = NETDEV_TX_BUSY;
-			break;
-		}
 	}
-
 }
 ```
 
@@ -591,12 +579,6 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 
 	if (dev_nit_active(dev))
 		dev_queue_xmit_nit(skb, dev);
-
-	len = skb->len;
-	trace_net_dev_start_xmit(skb, dev);
-	rc = netdev_start_xmit(skb, dev, txq, more);
-	trace_net_dev_xmit(skb, rc, dev, len);
-
 	return rc;
 }
 ```
@@ -615,9 +597,26 @@ void dev_queue_xmit_nit(struct sk_buff *skb, struct net_device *dev)
 		pt_prev = ptype;
 		continue;
 	}
-
 }
 ```
+
+
+
+```c
+// net/core/dev.c
+// 触发回调 packet_rcv
+static inline int deliver_skb(struct sk_buff *skb,
+			      struct packet_type *pt_prev,
+			      struct net_device *orig_dev)
+{
+	if (unlikely(skb_orphan_frags_rx(skb, GFP_ATOMIC)))
+		return -ENOMEM;
+	refcount_inc(&skb->users);
+	return pt_prev->func(skb, skb->dev, pt_prev, orig_dev);
+}
+```
+
+
 
 # 参考资料
 

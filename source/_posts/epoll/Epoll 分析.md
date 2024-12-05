@@ -11,25 +11,25 @@ date: 2024-05-30 15:16:18
 
 # 为什么是 epoll
 
-- select
+- `select`
 
   ```c
   // 返回：若有就绪描述符则为其数目，若超时则为0，若出错则为-1
   int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
   ```
 
-  - 通过 select 告诉内核，我们对哪些 socket 的哪些事件感兴趣
-    - 将 socket 文件描述符数组用用户态复制到内核态，内核去遍历每一个 socket，当有事件发生时，将 socket 标记为可读/写，然后再把整个集合复制到用户态，用户态再次遍历查找可读/写的 socket，进行下一步处理
-    - select 函数对每一个描述符集合fd_set，最多可以同时监听1024个描述符
+  - 通过 `select` 告诉内核，我们对哪些 `socket` 的哪些事件感兴趣
+    - 将 `socket` 文件描述符数组用用户态复制到内核态，内核去遍历每一个 `socket`，当有事件发生时，将 `socket` 标记为可读/写，然后再把整个集合复制到用户态，用户态再次遍历查找可读/写的 `socket`，进行下一步处理
+    - `select` 函数对每一个描述符集合 `fd_set`，最多可以同时监听1024个描述符
 
-- poll
+- `poll`
 
   ```c
   // 返回：若有就绪描述符则为其数目，若超时则为0，若出错则为-1
   int poll(struct pollfd *fds, nfds_t nfds, int timeout);
   ```
 
-  - 与 select 类似，没有 1024 的限制
+  - 与 `select` 类似，没有 1024 的限制
 
 ## Benchmark
 
@@ -64,13 +64,14 @@ int main() {
 
 ## epoll_ctl
 
-1. 将 socket 封装成 epitem 添加到 eventpoll 对象中的红黑树
-2. 设置 socket 就绪后的回调函数为 ep_poll_callback
+1. 将 `socket` 封装成 `epitem` 添加到 `eventpoll` 对象中的红黑树。
+2. 设置 `socket` 就绪后的回调函数为 `ep_poll_callback`。
 
 ## epoll_wait
 
-1. 检查 eventpoll 就绪队列，存在就绪队列则处理数据
-2. 就绪队列为空则挂起当前进程，让出 cpu，等待会唤醒
+1. 检查 `eventpoll` 就绪队列，存在就绪队列则处理数据。
+2. 就绪队列为空则挂起当前进程，将当前进程加入到等待队列，并设置回调函数 `ep_autoremove_wake_function`。
+3. 让出 `cpu`，等待被唤醒。
 
 # 流程解析
 
@@ -79,6 +80,18 @@ int main() {
 ##  流程一、构建 eventpoll，添加 socket，调用 epoll_wait 过程
 
 ### 创建 eventpoll
+
+```c
+SYSCALL_DEFINE1(epoll_create, int, size)
+{
+	if (size <= 0)
+		return -EINVAL;
+
+	return do_epoll_create(0);
+}
+```
+
+
 
 ```c
 /*
@@ -94,17 +107,7 @@ static int do_epoll_create(int flags)
 	 * Create the internal data structure ("struct eventpoll").
 	 */
 	error = ep_alloc(&ep);
-	if (error < 0)
-		return error;
 	...
-	file = anon_inode_getfile("[eventpoll]", &eventpoll_fops, ep,
-				 O_RDWR | (flags & O_CLOEXEC));
-	if (IS_ERR(file)) {
-		error = PTR_ERR(file);
-		goto out_free_fd;
-	}
-	ep->file = file;
-	fd_install(fd, file);
 	return fd;
 }
 ```
@@ -190,12 +193,12 @@ static int ep_insert(struct eventpoll *ep, const struct epoll_event *event,
 	 * Add the current item to the RB tree. All RB tree operations are
 	 * protected by "mtx", and ep_insert() is called with "mtx" held.
 	 */
+  // 插入红黑树
 	ep_rbtree_insert(ep, epi);
-	if (tep)
-		mutex_unlock(&tep->mtx);
-
+  ...
 	/* Initialize the poll table using the queue callback */
 	epq.epi = epi;
+  // 设置回调
 	init_poll_funcptr(&epq.pt, ep_ptable_queue_proc);
 	...
 }
@@ -214,29 +217,25 @@ static void ep_ptable_queue_proc(struct file *file, wait_queue_head_t *whead,
 	struct ep_pqueue *epq = container_of(pt, struct ep_pqueue, pt);
 	struct epitem *epi = epq->epi;
 	struct eppoll_entry *pwq;
-
-	if (unlikely(!epi))	// an earlier allocation has failed
-		return;
-
-	pwq = kmem_cache_alloc(pwq_cache, GFP_KERNEL);
-	if (unlikely(!pwq)) {
-		epq->epi = NULL;
-		return;
-	}
-
+	...
+  // 设置 socket 回调函数为 ep_poll_callback
 	init_waitqueue_func_entry(&pwq->wait, ep_poll_callback);
-	pwq->whead = whead;
-	pwq->base = epi;
-	if (epi->event.events & EPOLLEXCLUSIVE)
-		add_wait_queue_exclusive(whead, &pwq->wait);
-	else
-		add_wait_queue(whead, &pwq->wait);
-	pwq->next = epi->pwqlist;
-	epi->pwqlist = pwq;
+	...
 }
 ```
 
 ### 调用 epoll_wait
+
+```c
+SYSCALL_DEFINE4(epoll_wait, int, epfd, struct epoll_event __user *, events, int, maxevents, int, timeout)
+{
+	struct timespec64 to;
+
+	return do_epoll_wait(epfd, events, maxevents, ep_timeout_to_timespec(&to, timeout));
+}
+```
+
+
 
 ```c
 /*
@@ -247,27 +246,6 @@ static int do_epoll_wait(int epfd, struct epoll_event __user *events,
 			 int maxevents, struct timespec64 *to)
 {
 	struct eventpoll *ep;
-
-	/* The maximum number of event must be greater than zero */
-	if (maxevents <= 0 || maxevents > EP_MAX_EVENTS)
-		return -EINVAL;
-
-	/* Verify that the area passed by the user is writeable */
-	if (!access_ok(events, maxevents * sizeof(struct epoll_event)))
-		return -EFAULT;
-
-	/* Get the "struct file *" for the eventpoll file */
-	CLASS(fd, f)(epfd);
-	if (fd_empty(f))
-		return -EBADF;
-
-	/*
-	 * We have to check that the file structure underneath the fd
-	 * the user passed to us _is_ an eventpoll file.
-	 */
-	if (!is_file_epoll(fd_file(f)))
-		return -EINVAL;
-
 	/*
 	 * At this point it is safe to assume that the "private_data" contains
 	 * our own data structure.
@@ -306,20 +284,6 @@ static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
 	u64 slack = 0;
 	wait_queue_entry_t wait;
 	ktime_t expires, *to = NULL;
-
-	lockdep_assert_irqs_enabled();
-
-	if (timeout && (timeout->tv_sec | timeout->tv_nsec)) {
-		slack = select_estimate_accuracy(timeout);
-		to = &expires;
-		*to = timespec64_to_ktime(*timeout);
-	} else if (timeout) {
-		/*
-		 * Avoid the unnecessary trip to the wait queue loop, if the
-		 * caller specified a non blocking operation.
-		 */
-		timed_out = 1;
-	}
 
 	/*
 	 * This call is racy: We may or may not see events that are being added
@@ -430,17 +394,80 @@ static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
 
 ## 流程二、数据包到达时
 
-1. 数据包到达网卡
-2. 网卡将数据包 DMA 到内核中的 Ring Buffer
-3. 网卡向 CPU 发出硬中断
-4. CPU 简单处理硬中断
-5. ksofirqd 进程处理软中断，调用网卡注册的 poll 函数开始收包
-6. 数据包从 Ring Buffer 上取出来，保存为一个 skb
-7. 协议层接管 skb，并将 data 部分放到 socket 接收队列
-8. 触发 socket 上注册的 ep_poll_callback 函数
-9. ep_poll_callback 触发 eventpoll 上注册的 ep_autoremove_wake_function 函数
-10. ep_autoremove_wake_function 唤醒用户进程
-11. 用户进程则开始循环检测就绪队列，如果存在数据则交由用户进程处理，如果不存在则挂起当前进程，让出 CPU，等待下次被唤醒。
+### 分析 ep_poll_callback
+
+```c
+static int ep_poll_callback(wait_queue_entry_t *wait, unsigned mode, int sync, void *key)
+{
+	int pwake = 0;
+	struct epitem *epi = ep_item_from_wait(wait);
+	struct eventpoll *ep = epi->ep;
+	__poll_t pollflags = key_to_poll(key);
+	unsigned long flags;
+	int ewake = 0;
+
+	/*
+	 * If we are transferring events to userspace, we can hold no locks
+	 * (because we're accessing user memory, and because of linux f_op->poll()
+	 * semantics). All the events that happen during that period of time are
+	 * chained in ep->ovflist and requeued later on.
+	 */
+	if (READ_ONCE(ep->ovflist) != EP_UNACTIVE_PTR) {
+		if (chain_epi_lockless(epi))
+			ep_pm_stay_awake_rcu(epi);
+	} else if (!ep_is_linked(epi)) {
+		/* In the usual case, add event to ready list. */
+    // epitem 添加到就绪队列
+		if (list_add_tail_lockless(&epi->rdllink, &ep->rdllist))
+			ep_pm_stay_awake_rcu(epi);
+	}
+
+	/*
+	 * Wake up ( if active ) both the eventpoll wait list and the ->poll()
+	 * wait list.
+	 */
+	if (waitqueue_active(&ep->wq)) {
+		if ((epi->event.events & EPOLLEXCLUSIVE) &&
+					!(pollflags & POLLFREE)) {
+			switch (pollflags & EPOLLINOUT_BITS) {
+			case EPOLLIN:
+				if (epi->event.events & EPOLLIN)
+					ewake = 1;
+				break;
+			case EPOLLOUT:
+				if (epi->event.events & EPOLLOUT)
+					ewake = 1;
+				break;
+			case 0:
+				ewake = 1;
+				break;
+			}
+		}
+    
+    // 唤醒 eventpoll 上等待队列的进程
+		if (sync)
+			wake_up_sync(&ep->wq);
+		else
+			wake_up(&ep->wq);
+	}
+	
+	return ewake;
+}
+```
+
+### 总结收包流程
+
+1. 数据包到达网卡。
+2. 网卡将数据包 `DMA` 到内核中的 `Ring Buffer`。
+3. 网卡向 `CPU` 发出硬中断。
+4. `CPU` 简单处理硬中断。
+5. `ksofirqd` 进程处理软中断，调用网卡注册的 `poll` 函数开始收包。
+6. 数据包从 `Ring Buffer` 上取出来，保存为一个 `skb`。
+7. 协议层接管 `skb`，并将 `data` 部分放到 `socket` 接收队列。
+8. 触发 `socket` 上注册的 `ep_poll_callback` 函数。
+9. `ep_poll_callback` 触发 `eventpoll` 上注册的 `ep_autoremove_wake_function` 函数。
+10. `ep_autoremove_wake_function` 唤醒当前进程。
+11. 进程开始循环检测就绪队列，如果存在数据则交由用户进程处理，如果不存在则挂起当前进程，让出 `CPU`，等待下次被唤醒。
 # 参考资料
 - https://events19.linuxfoundation.org/wp-content/uploads/2018/07/dbueso-oss-japan19.pdf
 - https://cloud.tencent.com/developer/article/2212219

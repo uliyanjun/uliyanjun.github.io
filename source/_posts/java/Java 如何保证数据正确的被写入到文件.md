@@ -88,8 +88,7 @@ Java_java_io_FileOutputStream_writeBytes(JNIEnv *env,
 继续看`writeBytes`
 
 ```c
-void
-writeBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off, jint len, jboolean append, jfieldID fid)
+void writeBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off, jint len, jboolean append, jfieldID fid)
 {
     jint n;
     char stackBuf[BUF_SIZE];
@@ -100,8 +99,7 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off, jint len, jboo
         n = IO_Append(fd, buf+off, len);
     } else {
         n = IO_Write(fd, buf+off, len);
-    }
-            
+    }       
 }
 ```
 
@@ -112,8 +110,7 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off, jint len, jboo
 ```
 
 ```c
-ssize_t
-handleWrite(FD fd, const void *buf, jint len)
+ssize_t handleWrite(FD fd, const void *buf, jint len)
 {
     ssize_t result;
     RESTARTABLE(write(fd, buf, len), result);
