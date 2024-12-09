@@ -1,5 +1,5 @@
 ---
-title: Redis 数据结构
+title: Redis 数据结构浅析
 date: 2024-12-05 20:55:35
 categories:
   - redis
@@ -313,11 +313,11 @@ static void listTypeTryConvertListpack(robj *o, robj **argv, int start, int end,
 
 先使用 `object encoding key` 命令查看编码。
 
-![image-20241209144040461](../pic/image-20241209144040461.png)
+![image-20241209144040461](../../imgs/redis/image-20241209144040461.png)
 
 
 
-![image-20241209143910628](../pic/image-20241209143910628.png)
+![image-20241209143910628](../../imgs/redis/image-20241209143910628.png)
 
 ## 从 hsetcommand 开始
 
@@ -393,9 +393,9 @@ void hashTypeTryConversion(redisDb *db, robj *o, robj **argv, int start, int end
 
 先使用 `object encoding key` 命令查看编码。
 
-![image-20241209150837654](../pic/image-20241209150837654.png)
+![image-20241209150837654](../../imgs/redis/image-20241209150837654.png)
 
-![image-20241209150944735](../pic/image-20241209150944735.png)
+![image-20241209150944735](../../imgs/redis/image-20241209150944735.png)
 
 ## 从 saddCommand 开始
 
@@ -470,13 +470,13 @@ robj *setTypeCreate(sds value, size_t size_hint) {
 
 先使用 `object encoding key` 命令查看编码。
 
-![image-20241209155512710](../pic/image-20241209155512710.png)
+![image-20241209155512710](../../imgs/redis/image-20241209155512710.png)
 
-![image-20241209153826802](../pic/image-20241209153826802.png)
+![image-20241209153826802](../../imgs/redis/image-20241209153826802.png)
 
 跳表结构
 
-![image-20241209154911812](../pic/image-20241209154911812.png)
+![image-20241209154911812](../../imgs/redis/image-20241209154911812.png)
 
 ## 从 zaddCommand 开始
 
