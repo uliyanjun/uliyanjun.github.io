@@ -1,5 +1,5 @@
 ---
-title: MySql 锁
+title: MySql 锁分析
 categories:
   - mysql
 tags:
@@ -7,7 +7,7 @@ tags:
 date: 2024-12-03 17:38:09
 ---
 
-MySql  锁
+本文来分析 Mysql 锁，从 server 层和引擎层两个层面展开。
 
 > Version： >= 8.0
 >
