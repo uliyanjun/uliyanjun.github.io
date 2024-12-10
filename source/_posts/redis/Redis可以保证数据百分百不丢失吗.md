@@ -21,6 +21,10 @@ tags:
 
 小结：`RDB` 模式下满足设定条件的情况下打快照显然不能保证，同理，`AOF`  模式下 `appendfsync everysec` 也是不能满足。
 
+> RDB save <seconds> <changes> 触发 bgsave，fork 一个子进程完成写盘操作，不会阻塞当前进程处理 redis 请求，通过系统调用 `fsync` 完成写盘。
+>
+> 手动调用 save 命令，会阻塞 redis 处理请求。
+
 那 `AOF` 模式下 `appendfsync always` 能保证吗？
 
 # 分析 appendfsync always
