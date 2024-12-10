@@ -214,3 +214,7 @@ CREATE TABLE `t1` (
 
 属于表级别锁，自增列获取值时会尝试获取 AUTO-INC Locks。
 
+# 参考资料
+- https://juejin.cn/post/6844903666332368909
+- https://weikeqin.com/2019/09/05/mysql-lock-table-solution/
+- https://dev.mysql.com/doc/refman/8.4/en/innodb-locking.html
