@@ -55,7 +55,7 @@ void dict_table_add_system_columns(dict_table_t *table, mem_heap_t *heap) {
    5. 更新行记录的 DB_TRX_ID 为当前的事务 ID，并更新需要更新的字段。
    6. 写入 Redo Log（内存）
    7. 准备 Binlog 缓存
-3.  事务提交
+3. 事务提交
    1. Redo Log 刷盘
    2. Binlog 写入磁盘
    3. 提交完成，释放锁
