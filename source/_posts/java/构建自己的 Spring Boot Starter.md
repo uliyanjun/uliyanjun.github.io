@@ -1,5 +1,5 @@
 ---
-title: 构建自己的 spring boot starter
+title: 构建自己的 Spring Boot Starter
 date: 2024-12-04 13:45:43
 categories:
   - java

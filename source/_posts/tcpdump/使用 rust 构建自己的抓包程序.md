@@ -1,5 +1,5 @@
 ---
-title: 使用 RUST 构建自己的抓包程序
+title: 使用 Rust 构建自己的抓包程序
 categories:
   - tcpdump
 tags:
