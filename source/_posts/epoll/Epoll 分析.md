@@ -6,7 +6,7 @@ tags:
   - linux
   - epoll
   - io
-date: 2024-05-30 15:16:18
+date: 2024-10-30 15:16:18
 ---
 
 # 为什么是 epoll
