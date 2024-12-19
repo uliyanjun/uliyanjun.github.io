@@ -4,7 +4,7 @@ categories:
   - mysql
 tags:
   - mysql
-date: 2024-11-03 21:30:28
+date: 2023-11-03 21:30:28
 ---
 # 什么是事务
 
