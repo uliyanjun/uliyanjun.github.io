@@ -74,7 +74,7 @@ void aeMain(aeEventLoop *eventLoop) {
 }
 ```
 
-可以看到 `aeMain` 是一个事件循环处理器，我门进入 `aeProcessEvents`
+可以看到 `aeMain` 是一个事件循环处理器，我们进入 `aeProcessEvents`
 
 #### aeProcessEvents 分析
 

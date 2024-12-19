@@ -21,7 +21,7 @@ tags:
 
 # 如何自定义 spring boot starter？
 
-在自定义 `spring boot starter` 之前，我门思考一个问题：我们该如何把自定义的 `starter` 里的 `bean` 加入到 `spring` 容器中呢？
+在自定义 `spring boot starter` 之前，我们思考一个问题：我们该如何把自定义的 `starter` 里的 `bean` 加入到 `spring` 容器中呢？
 
 答案就是：利用 `spring` 的 `SPI` 机制。
 
