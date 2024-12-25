@@ -6,10 +6,7 @@ tags:
   - k8s
 date: 2024-01-06 23:52:29
 ---
-
 # k8s 架构
-
-
 
 ![控制平面（kube-apiserver、etcd、kube-controller-manager、kube-scheduler）和多个节点。每个节点运行 kubelet 和 kube-proxy。](../../imgs/k8s/kubernetes-cluster-architecture.svg)
 
@@ -21,13 +18,13 @@ date: 2024-01-06 23:52:29
 
 - Controller Manager：负责运行集群中所有的控制器逻辑。这些控制器通过不断监视集群的状态，与期望状态（定义在 Kubernetes 的资源对象中）进行比较，执行必要的操作以使实际状态逐步趋近期望状态。
 
-  - ```c
-    while True:
-        desired_state = get_desired_state()  // 期望状态
-        current_state = get_current_state()  // 当前状态
-        if desired_state != current_state:
-            make_changes_to_reach_desired_state()  // 执行步骤
-    ```
+  ```c
+  while True:
+      desired_state = get_desired_state()  // 期望状态
+      current_state = get_current_state()  // 当前状态
+      if desired_state != current_state:
+          make_changes_to_reach_desired_state()  // 执行步骤
+  ```
 
   - 控制器类型
 
@@ -179,7 +176,7 @@ spec:
 
 ![image-20241225112330871](../../imgs/k8s/image-20241225112330871.png)
 
-### **详细数据流总结**
+详细数据流总结
 
 | **步骤**                   | **组件**                                      | **作用**                                         |
 | -------------------------- | --------------------------------------------- | ------------------------------------------------ |
