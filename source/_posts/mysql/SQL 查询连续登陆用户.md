@@ -1,5 +1,5 @@
 ---
-title: 查询连续登陆用户
+title: SQL 查询连续登陆用户
 categories:
   - mysql
 tags:
