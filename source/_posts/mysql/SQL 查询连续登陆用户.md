@@ -54,7 +54,7 @@ WHERE
 
 对 login_date 排序后，分别使用 lag 和 lead 函数查询出上一个和下一个 login_date 作为辅助列，产生一个结果，然后在对这个结果进行过滤。（mysql 8.0）
 
-<img src="../../imgs/mysql/image-20250313160931317.png" alt="image-20250313160931317" style="zoom:50%;" />
+![image-20250313160931317](../../imgs/mysql/image-20250313160931317.png)
 
 ### 方案2:
 
@@ -96,4 +96,5 @@ HAVING
 	COUNT( date_group ) >= 3;
 ```
 
- 思路：<img src="../../imgs/mysql/image-20250313161304082.png" alt="image-20250313161304082" style="zoom:50%;" />
+ 思路：
+ ![image-20250313161304082](../../imgs/mysql/image-20250313161304082.png)
